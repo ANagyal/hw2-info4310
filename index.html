@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="UTF-8" />
+		<title>HW2</title>
+		<script src="https://d3js.org/d3.v7.min.js"></script>
+	</head>
+
+	<body>
+		<div id="l1-cont">
+			<h1 id="name-netid">INFO 4310 - HW2</h1>
+			<!-- <div id="line-cont" class="l2-cont">
+				<div class="l3-cont plot">
+					<h1 class="plot-title" id="line-title">TODO: Line Plot</h1>
+					<h2 class="plot-subtitle" id="line-subtitle">TODO: Line Plot is a line plot</h2>
+					<svg id="line" width="900" height="600"></svg>
+					<svg id="line-legend" width="900" height="213"></svg>
+				</div>
+				<div class="l3-cont data">
+					<div class="preview-cont"></div>
+					<div class="filter-cont"></div>
+				</div>
+			</div> -->
+			<div id="stack-cont" class="l2-cont">
+				<div class="l3-cont plot">
+					<h2 class="plot-title" id="stack-title">
+						Total Video Game Sales for Each Genre
+					</h2>
+					<h3 class="plot-subtitle" id="stack-subtitle">
+						Total sales (in millions) as a function of time (in years) grouped by genre
+					</h3>
+					<svg id="stack" width="900" height="600"></svg>
+					<svg id="stack-legend" width="900" height="213"></svg>
+				</div>
+				<div class="l3-cont data">
+					<div class="preview-cont" id="stack-preview-cont"></div>
+					<div class="filter-cont" id="stack-filter-cont"></div>
+				</div>
+			</div>
+		</div>
+		<script src="scripts/legend.js"></script>
+		<!-- <script type="module" src="scripts/line.js"></script> -->
+		<script type="module" src="scripts/stack.js"></script>
+	</body>
+	<style>
+		* {
+			font-family: Lexend, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
+				Roboto, Oxygen, Ubuntu, Cantarell, "Open Sans", "Helvetica Neue", sans-serif;
+			font-weight: 400;
+			background-color: black;
+			color: white;
+		}
+
+		.plot-title,
+		.plot-subtitle {
+			margin: 0;
+		}
+
+		#l1-cont {
+			width: 96vw;
+			margin: 0 auto;
+		}
+
+		.l2-cont {
+			display: flex;
+			flex-direction: row;
+			height: 100%;
+		}
+
+		.l3-cont {
+			display: flex;
+			flex-direction: column;
+			height: 879px;
+		}
+
+		.l3-cont.plot {
+			width: 900px;
+		}
+
+		.l3-cont.data {
+			width: 100%;
+			height: 866px;
+			display: flex;
+			flex-direction: column;
+		}
+
+		.preview-cont {
+			height: fit-content;
+		}
+
+		.filter-cont {
+			height: fit-content;
+		}
+
+		.axis {
+			font-size: 12pt;
+		}
+
+		.grid {
+			opacity: 0.3;
+		}
+	</style>
+</html>
