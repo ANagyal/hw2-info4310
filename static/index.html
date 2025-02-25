@@ -9,18 +9,6 @@
 	<body>
 		<div id="l1-cont">
 			<h1 id="name-netid">INFO 4310 - HW2</h1>
-			<!-- <div id="line-cont" class="l2-cont">
-				<div class="l3-cont plot">
-					<h1 class="plot-title" id="line-title">TODO: Line Plot</h1>
-					<h2 class="plot-subtitle" id="line-subtitle">TODO: Line Plot is a line plot</h2>
-					<svg id="line" width="900" height="600"></svg>
-					<svg id="line-legend" width="900" height="213"></svg>
-				</div>
-				<div class="l3-cont data">
-					<div class="preview-cont"></div>
-					<div class="filter-cont"></div>
-				</div>
-			</div> -->
 			<div id="stack-cont" class="l2-cont">
 				<div class="l3-cont plot">
 					<h2 class="plot-title" id="stack-title">
@@ -30,7 +18,6 @@
 						Total sales (in millions) as a function of time (in years) grouped by genre
 					</h3>
 					<svg id="stack" width="900" height="600"></svg>
-					<svg id="stack-legend" width="900" height="213"></svg>
 				</div>
 				<div class="l3-cont data">
 					<div class="preview-cont" id="stack-preview-cont"></div>
@@ -49,6 +36,16 @@
 			font-weight: 400;
 			background-color: black;
 			color: white;
+		}
+
+		fieldset.stack-fieldset#console {
+			display: grid;
+			grid-template-columns: auto auto auto auto auto;
+		}
+
+		fieldset.stack-fieldset#developer {
+			display: grid;
+			grid-template-columns: auto auto;
 		}
 
 		.plot-title,

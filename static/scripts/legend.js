@@ -4,130 +4,108 @@
 //
 // Usage example: drawLegend("#legendID", grossIncomeColorScale)
 function drawLegend(legendSelector, legendColorScale) {
-	// This code should adapt to a variety of different kinds of color scales
-	//  Credit Prof. Rz if you are basing a legend on this structure, and note PERFORMANCE CONSIDERATIONS
-
-	// Shrink legend bar by 5 px inwards from sides of SVG
-	const offsets = { width: 10, top: 2, bottom: 160 };
-	// Number of integer 'pixel steps' to draw when showing continuous scales
-	//    Warning, not using a canvas element so lots of rect tags will be created for low stepSize, causing issues with performance -- keep this large
+	// Configuration constants
+	const offsets = { width: 0, top: 0, bottom: 0 };
 	const stepSize = 4;
-	// Extend the minmax by 0% in either direction to expose more features by default
 	const minMaxExtendPercent = 0;
+	const transitionDuration = 750; // Duration of transitions in milliseconds
 
+	// Select the legend SVG element
 	const legend = d3.select(legendSelector);
-	const legendHeight = legend.attr("height");
-	const legendBarWidth = legend.attr("width") - offsets.width * 2;
+	legend.attr("overflow", "visible");
+	const legendHeight = +legend.attr("height");
+	const legendBarWidth = +legend.attr("width") - offsets.width * 2;
 	const legendMinMax = d3.extent(legendColorScale.domain());
-	// recover the min and max values from most kinds of numeric scales
 	const minMaxExtension = (legendMinMax[1] - legendMinMax[0]) * minMaxExtendPercent;
 	const barHeight = legendHeight - offsets.top - offsets.bottom;
 
-	// In this case the "data" are pixels, and we get numbers to use in colorScale
-	// Use this to make axis labels
+	// Clear existing legend content
+	legend.selectAll("*").remove();
+
+	// Define the scale for the legend's axis
 	let barScale = d3
 		.scaleLinear()
 		.domain([legendMinMax[0] - minMaxExtension, legendMinMax[1] + minMaxExtension])
 		.range([0, legendBarWidth]);
 	let barAxis = d3.axisBottom(barScale);
 
-	// Place for bar slices to live
+	// Group for the color bar
 	let bar = legend
 		.append("g")
 		.attr("class", "legend colorbar")
 		.attr("transform", `translate(${offsets.width},${offsets.top})`);
 
-	// ****** SWITCHES FOR DIFFERENT SCALE TYPES ******
-
-	// Check if we're using a binning scale - if so, we make blocks of color
+	// Determine the type of color scale and render accordingly
 	if (
 		legendColorScale.hasOwnProperty("thresholds") ||
 		legendColorScale.hasOwnProperty("quantiles")
 	) {
-		// Get the thresholds
-		let thresholds = [];
-		if (legendColorScale.hasOwnProperty("thresholds")) {
-			thresholds = legendColorScale.thresholds();
-		} else {
-			thresholds = legendColorScale.quantiles();
-		}
-
+		// Binning scale
+		let thresholds = legendColorScale.hasOwnProperty("thresholds")
+			? legendColorScale.thresholds()
+			: legendColorScale.quantiles();
 		const barThresholds = [legendMinMax[0], ...thresholds, legendMinMax[1]];
 
-		// Use the quantile breakpoints plus the min and max of the scale as tick values
 		barAxis.tickValues(barThresholds);
 
-		// Draw rectangles between the threshold segments
-		for (let i = 0; i < barThresholds.length - 1; i++) {
-			let dataStart = barThresholds[i];
-			let dataEnd = barThresholds[i + 1];
-			let pixelStart = barAxis.scale()(dataStart);
-			let pixelEnd = barAxis.scale()(dataEnd);
+		// Draw rectangles for each threshold segment
+		bar
+			.selectAll("rect")
+			.data(d3.pairs(barThresholds))
+			.enter()
+			.append("rect")
+			.attr("x", (d) => barScale(d[0]))
+			.attr("y", 0)
+			.attr("width", (d) => barScale(d[1]) - barScale(d[0]))
+			.attr("height", barHeight)
+			.style("fill", (d) => legendColorScale((d[0] + d[1]) / 2))
+			.style("opacity", 0)
+			.style("opacity", 1);
 
-			bar
-				.append("rect")
-				.attr("x", pixelStart)
-				.attr("y", 0)
-				.attr("width", pixelEnd - pixelStart)
-				.attr("height", barHeight)
-				.style("fill", legendColorScale((dataStart + dataEnd) / 2.0));
-		}
-	}
-	// Else if we have a continuous / roundable scale
-	//  In an ideal world you might construct a custom gradient mapped to the scale
-	//  For this one, we use a hack of making stepped rects
-	else if (legendColorScale.hasOwnProperty("rangeRound")) {
-		// NOTE: The barAxis may round min and max values to make them pretty
-		// ** This also means there is a risk of the legend going beyond scale bounds
-		// We need to use the barAxis min and max just to be sure the bar is complete
-		//    Using barAxis.scale().invert() goes from *axis* pixels to data values easily
-		// ** We also need to create patches for the scale if the labels exceed bounds
-		//     (floating point comparisons risky for small data ranges,but not a big deal
-		//      because patches will be indistinguishable from actual scale bottom)
-		// It's likely that scale clamping will actually do this for us elegantly
-		// ...but better to be safer and patch the regions anyways
+		legend
+			.selectAll("text.legend.text")
+			.data(d3.pairs(barThresholds))
+			.enter()
+			.append("text")
+			.attr("class", "legend text")
+			.attr("x", (d) => barScale(d[0]))
+			.attr("y", 0)
+			.text((d) => console.log((d[0] + d[1]) / 2))
+			.style("opacity", 0)
+			.style("opacity", 1);
+	} else if (legendColorScale.hasOwnProperty("rangeRound")) {
+		// Continuous scale
+		const pixels = d3.range(0, legendBarWidth, stepSize);
+		bar
+			.selectAll("rect")
+			.data(pixels)
+			.enter()
+			.append("rect")
+			.attr("x", (d) => d)
+			.attr("y", 0)
+			.attr("width", stepSize)
+			.attr("height", barHeight)
+			.style("fill", (d) => {
+				const dataValue = barScale.invert(d + stepSize / 2);
+				return legendColorScale(dataValue);
+			})
+			.style("opacity", 0)
+			.style("opacity", 1);
 
-		for (let i = 0; i < legendBarWidth; i = i + stepSize) {
-			let center = i + stepSize / 2;
-			let dataCenter = barAxis.scale().invert(center);
-
-			// below normal scale bounds
-			if (dataCenter < legendMinMax[0]) {
-				bar
-					.append("rect")
-					.attr("x", i)
-					.attr("y", 0)
-					.attr("width", stepSize)
-					.attr("height", barHeight)
-					.style("fill", legendColorScale(legendMinMax[0]));
-			}
-			// within normal scale bounds
-			else if (dataCenter < legendMinMax[1]) {
-				bar
-					.append("rect")
-					.attr("x", i)
-					.attr("y", 0)
-					.attr("width", stepSize)
-					.attr("height", barHeight)
-					.style("fill", legendColorScale(dataCenter));
-			}
-			// above normal scale bounds
-			else {
-				bar
-					.append("rect")
-					.attr("x", i)
-					.attr("y", 0)
-					.attr("width", stepSize)
-					.attr("height", barHeight)
-					.style("fill", legendColorScale(legendMinMax[1]));
-			}
-		}
-	}
-	// Otherwise we have a nominal scale
-	else {
+		legend
+			.selectAll("text.legend.text")
+			.data(pixels)
+			.enter()
+			.append("text")
+			.attr("class", "legend text")
+			.attr("x", (d) => d)
+			.attr("y", 0)
+			.text((d) => console.log(barScale.invert(d + stepSize / 2)))
+			.style("opacity", 0)
+			.style("opacity", 1);
+	} else {
+		// Nominal scale
 		let nomVals = legendColorScale.domain().sort();
-
-		// Use a scaleBand to make blocks of color and simple labels
 		let barScale = d3
 			.scaleBand()
 			.domain(nomVals)
@@ -135,28 +113,61 @@ function drawLegend(legendSelector, legendColorScale) {
 			.padding(0.05);
 		barAxis.scale(barScale);
 
-		// Draw rectangles for each nominal entry
-		nomVals.forEach((d) => {
-			bar
-				.append("rect")
-				.attr("x", barScale(d))
-				.attr("y", 0)
-				.attr("width", barScale.bandwidth())
-				.attr("height", barHeight)
-				.style("fill", legendColorScale(d));
-		});
-	}
-	// DONE w/SWITCH
+		bar
+			.selectAll("rect")
+			.data(nomVals)
+			.enter()
+			.append("rect")
+			.attr("x", (d) => barScale(d))
+			.attr("y", 0)
+			.attr("id", (d) => d)
+			.attr("width", barScale.bandwidth())
+			.attr("height", barHeight)
+			.style("fill", (d) => legendColorScale(d))
+			.style("opacity", 0)
+			.style("opacity", 1);
 
-	// Finally, draw legend labels
-	legend
-		.append("g")
-		.attr("class", "legend axis")
-		.attr("transform", `translate(${offsets.width},${offsets.top + barHeight + 5})`)
-		.call(barAxis)
-		.selectAll("text")
-		.style("text-anchor", "end")
-		.attr("dx", "-.6em")
-		.attr("dy", "-0.25em")
-		.attr("transform", "rotate(-90)");
+		legend
+			.selectAll("text.legend.text")
+			.data(nomVals)
+			.enter()
+			.append("text")
+			.attr("class", (d) => "legend text " + d)
+			.text((d) => d)
+			.attr("fill", "white")
+			.attr("text-anchor", "middle")
+			.attr("alignment-baseline", "middle")
+			.attr(
+				"transform",
+				`translate(${offsets.width},${barHeight + offsets.top + 2.5})` + " rotate(-90)"
+			)
+			.attr("x", (d) => {
+				const x = -(barScale(d) + barScale.bandwidth() / 2);
+				const y = barHeight / 2;
+				const a = -Math.PI / 2;
+				return Math.cos(a) * x - Math.sin(a) * y;
+			})
+			.attr("y", (d) => {
+				const x = -(barScale(d) + barScale.bandwidth() / 2);
+				const y = barHeight / 2;
+				const a = -Math.PI / 2;
+				return Math.sin(a) * x + Math.cos(a) * y;
+			})
+			.style("opacity", 0)
+			.style("opacity", 1);
+	}
+
+	// Draw the axis with a transition
+	// .attr("transform", `translate(${offsets.width},${offsets.top + barHeight + 5})`)
+	// .call(barAxis.tickSize(0))
+	// .call((g) => g.select(".domain").remove())
+	// .selectAll("text")
+	// .style("text-anchor", "start")
+	// .attr("dx", ".6em")
+	// .attr("dy", ".15em")
+	// .attr("transform", "rotate(-90)")
+	// .style("opacity", 0)
+	// .transition()
+	// .duration(transitionDuration)
+	// .style("opacity", 1);
 }
