@@ -8,7 +8,6 @@ function drawLegend(legendSelector, legendColorScale) {
 	const offsets = { width: 0, top: 0, bottom: 0 };
 	const stepSize = 4;
 	const minMaxExtendPercent = 0;
-	const transitionDuration = 750; // Duration of transitions in milliseconds
 
 	// Select the legend SVG element
 	const legend = d3.select(legendSelector);
@@ -134,7 +133,8 @@ function drawLegend(legendSelector, legendColorScale) {
 			.append("text")
 			.attr("class", (d) => "legend text " + d)
 			.text((d) => d)
-			.attr("fill", "white")
+			.attr("fill", "black")
+			.style("font-weight", "bold")
 			.attr("text-anchor", "middle")
 			.attr("alignment-baseline", "middle")
 			.attr(
@@ -156,18 +156,4 @@ function drawLegend(legendSelector, legendColorScale) {
 			.style("opacity", 0)
 			.style("opacity", 1);
 	}
-
-	// Draw the axis with a transition
-	// .attr("transform", `translate(${offsets.width},${offsets.top + barHeight + 5})`)
-	// .call(barAxis.tickSize(0))
-	// .call((g) => g.select(".domain").remove())
-	// .selectAll("text")
-	// .style("text-anchor", "start")
-	// .attr("dx", ".6em")
-	// .attr("dy", ".15em")
-	// .attr("transform", "rotate(-90)")
-	// .style("opacity", 0)
-	// .transition()
-	// .duration(transitionDuration)
-	// .style("opacity", 1);
 }
